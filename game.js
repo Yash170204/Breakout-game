@@ -109,10 +109,7 @@ function resetGame() {
   gameState = "paused";
   score = 0;
   lives = 3;
-  currentLevel = 0;
-  x = WIDTH / 2;
-  y = HEIGHT - 30;
-  dx = 3;
+dx = Math.random() < 0.5 ? 3 : -3;
   dy = -3;
   paddleX = (WIDTH - paddleWidth) / 2;
   loadLevel(currentLevel);
@@ -257,7 +254,7 @@ function draw() {
       } else {
         x = WIDTH / 2;
         y = HEIGHT - 30;
-        dx = 3;
+        dx = Math.random() < 0.5 ? 3 : -3;
         dy = -3;
         paddleX = (WIDTH - paddleWidth) / 2;
       }
