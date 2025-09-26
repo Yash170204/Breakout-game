@@ -33,8 +33,6 @@ let dx = 3;
 let dy = -3;
 
 // Brick grid
-const brickRowCount = 5;
-const brickColumnCount = 8;
 const brickWidth = 75;
 const brickHeight = 20;
 const brickPadding = 10;
@@ -43,12 +41,45 @@ const brickOffsetLeft = 30;
 
 let score = 0;
 let lives = 3;
+let currentLevel = 0;
 
-const bricks = [];
-for (let c = 0; c < brickColumnCount; c++) {
-  bricks[c] = [];
-  for (let r = 0; r < brickRowCount; r++) {
-    bricks[c][r] = { x: 0, y: 0, status: 1 };
+const levels = [
+  // Level 1
+  [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0, 0],
+  ],
+  // Level 2
+  [
+    [1, 1, 0, 1, 1, 0, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1],
+    [0, 1, 1, 0, 0, 1, 1, 0],
+    [1, 1, 0, 1, 1, 0, 1, 1],
+  ],
+  // Level 3
+  [
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 1, 0, 1, 0, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [0, 1, 0, 1, 0, 1, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+  ],
+];
+
+let bricks = [];
+
+function loadLevel(level) {
+  bricks = [];
+  const currentLevelLayout = levels[level];
+  for (let r = 0; r < currentLevelLayout.length; r++) {
+    bricks[r] = [];
+    for (let c = 0; c < currentLevelLayout[r].length; c++) {
+      bricks[r][c] = { x: 0, y: 0, status: currentLevelLayout[r][c] };
+    }
   }
 }
 
@@ -78,16 +109,13 @@ function resetGame() {
   gameState = "paused";
   score = 0;
   lives = 3;
+  currentLevel = 0;
   x = WIDTH / 2;
   y = HEIGHT - 30;
   dx = 3;
   dy = -3;
   paddleX = (WIDTH - paddleWidth) / 2;
-  for (let c = 0; c < brickColumnCount; c++) {
-    for (let r = 0; r < brickRowCount; r++) {
-      bricks[c][r].status = 1;
-    }
-  }
+  loadLevel(currentLevel);
   scoreEl.textContent = "Score: " + score;
   livesEl.textContent = "Lives: " + lives;
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
@@ -131,13 +159,13 @@ function drawPaddle() {
 }
 
 function drawBricks() {
-  for (let c = 0; c < brickColumnCount; c++) {
-    for (let r = 0; r < brickRowCount; r++) {
-      if (bricks[c][r].status === 1) {
+  for (let r = 0; r < bricks.length; r++) {
+    for (let c = 0; c < bricks[r].length; c++) {
+      if (bricks[r][c].status === 1) {
         const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
         const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
-        bricks[c][r].x = brickX;
-        bricks[c][r].y = brickY;
+        bricks[r][c].x = brickX;
+        bricks[r][c].y = brickY;
         ctx.beginPath();
         ctx.rect(brickX, brickY, brickWidth, brickHeight);
         ctx.fillStyle = "#0095DD";
@@ -152,9 +180,9 @@ function drawBricks() {
 
 // ===== Collision Detection =====
 function collisionDetection() {
-  for (let c = 0; c < brickColumnCount; c++) {
-    for (let r = 0; r < brickRowCount; r++) {
-      const b = bricks[c][r];
+  for (let r = 0; r < bricks.length; r++) {
+    for (let c = 0; c < bricks[r].length; c++) {
+      const b = bricks[r][c];
       if (b.status === 1) {
         if (
           x > b.x &&
@@ -166,9 +194,32 @@ function collisionDetection() {
           b.status = 0;
           score++;
           scoreEl.textContent = "Score: " + score;
-          if (score === brickRowCount * brickColumnCount) {
-            alert("You Win! Congratulations!");
-            resetGame();
+
+          let allBricksCleared = true;
+          for (let r2 = 0; r2 < bricks.length; r2++) {
+            for (let c2 = 0; c2 < bricks[r2].length; c2++) {
+              if (bricks[r2][c2].status === 1) {
+                allBricksCleared = false;
+                break;
+              }
+            }
+            if (!allBricksCleared) break;
+          }
+
+          if (allBricksCleared) {
+            currentLevel++;
+            if (currentLevel >= levels.length) {
+              alert("You Win! Congratulations!");
+              resetGame();
+            } else {
+              alert("Next Level!");
+              x = WIDTH / 2;
+              y = HEIGHT - 30;
+              dx = 3;
+              dy = -3;
+              paddleX = (WIDTH - paddleWidth) / 2;
+              loadLevel(currentLevel);
+            }
           }
         }
       }
