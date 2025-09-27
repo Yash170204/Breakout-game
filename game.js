@@ -135,8 +135,16 @@ function mouseMoveHandler(e) {
   const relativeX = e.clientX - canvas.offsetLeft;
   if (relativeX > 0 && relativeX < WIDTH) {
     paddleX = relativeX - paddleWidth / 2;
+    if (paddleX < 0) {
+      paddleX = 0;
+    }
+    if (paddleX + paddleWidth > WIDTH) {
+      paddleX = WIDTH - paddleWidth;
+    }
   }
 }
+
+let powerups = [];
 
 // ===== Drawing Functions =====
 function drawBall() {
@@ -173,7 +181,23 @@ function drawBricks() {
   }
 }
 
-
+function drawPowerups() {
+  for (let i = 0; i < powerups.length; i++) {
+    const p = powerups[i];
+    if (p.status === 1) {
+      ctx.font = "20px Arial";
+      let emoji = "";
+      if (p.type === "longPaddle") {
+        emoji = "↔️";
+      } else if (p.type === "slowBall") {
+        emoji = "🐌";
+      } else if (p.type === "extraLife") {
+        emoji = "❤️";
+      }
+      ctx.fillText(emoji, p.x, p.y);
+    }
+  }
+}
 
 // ===== Collision Detection =====
 function collisionDetection() {
@@ -191,6 +215,12 @@ function collisionDetection() {
           b.status = 0;
           score++;
           scoreEl.textContent = "Score: " + score;
+
+          if (Math.random() < 0.2) { // 20% chance to spawn a powerup
+            const powerupTypes = ["longPaddle", "slowBall", "extraLife"];
+            const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+            powerups.push({ x: b.x + brickWidth / 2, y: b.y, type: randomType, status: 1 });
+          }
 
           let allBricksCleared = true;
           for (let r2 = 0; r2 < bricks.length; r2++) {
@@ -210,9 +240,11 @@ function collisionDetection() {
               resetGame();
             } else {
               alert("Next Level!");
+              lives = 3;
+              livesEl.textContent = "Lives: " + lives;
               x = WIDTH / 2;
               y = HEIGHT - 30;
-              dx = 3;
+              dx = Math.random() < 0.5 ? 3 : -3;
               dy = -3;
               paddleX = (WIDTH - paddleWidth) / 2;
               loadLevel(currentLevel);
@@ -222,6 +254,93 @@ function collisionDetection() {
       }
     }
   }
+}
+
+function updatePowerups() {
+  const newPowerups = [];
+  for (let i = 0; i < powerups.length; i++) {
+    const p = powerups[i];
+    if (p.status === 1) {
+      p.y += 2;
+      if (p.y < HEIGHT) {
+        newPowerups.push(p);
+      }
+    }
+  }
+  powerups = newPowerups;
+}
+
+function powerupCollisionDetection() {
+  for (let i = 0; i < powerups.length; i++) {
+    const p = powerups[i];
+    if (p.status === 1) {
+      if (
+        p.x > paddleX &&
+        p.x < paddleX + paddleWidth &&
+        p.y > HEIGHT - paddleHeight &&
+        p.y < HEIGHT
+      ) {
+        p.status = 0;
+        activatePowerup(p.type);
+      }
+    }
+  }
+}
+
+let activePowerups = {};
+
+function updateActivePowerups() {
+  const now = Date.now();
+  for (const type in activePowerups) {
+    if (now > activePowerups[type]) {
+      deactivatePowerup(type);
+    }
+  }
+}
+
+function drawPowerupTimers() {
+  const powerupEmojis = {
+    longPaddle: "↔️",
+    slowBall: "🐌",
+  };
+
+  ctx.font = "16px Arial";
+  ctx.fillStyle = "#FFFFFF";
+  let yOffset = 20;
+  for (const type in activePowerups) {
+    const remainingTime = activePowerups[type] - Date.now();
+    if (remainingTime > 0) {
+      const minutes = Math.floor(remainingTime / 60000);
+      const seconds = Math.ceil((remainingTime % 60000) / 1000).toString().padStart(2, '0');
+      const emoji = powerupEmojis[type] || "";
+      ctx.fillText(`${emoji}: ${minutes}:${seconds}`, WIDTH - 120, yOffset);
+      yOffset += 20;
+    }
+  }
+}
+
+function activatePowerup(type) {
+  if (type === "longPaddle") {
+    paddleWidth = 150;
+    activePowerups.longPaddle = Date.now() + 10000;
+  } else if (type === "slowBall" && !activePowerups.slowBall) {
+    dx *= 0.5;
+    dy *= 0.5;
+    activePowerups.slowBall = Date.now() + 10000;
+  } else if (type === "extraLife") {
+    lives++;
+    livesEl.textContent = "Lives: " + lives;
+  }
+}
+
+function deactivatePowerup(type) {
+  if (type === "longPaddle") {
+    paddleWidth = 75;
+  } else if (type === "slowBall") {
+    dx *= 2;
+    dy *= 2;
+  }
+  delete activePowerups[type];
 }
 
 // ===== Main Draw Loop =====
@@ -234,18 +353,25 @@ function draw() {
   drawBricks();
   drawBall();
   drawPaddle();
+  drawPowerups();
+  drawPowerupTimers();
   collisionDetection();
+  powerupCollisionDetection();
+  updatePowerups();
+  updateActivePowerups();
 
   // Bounce off side walls
   if (x + dx > WIDTH - ballRadius || x + dx < ballRadius) dx = -dx;
 
   // Bounce off top
   if (y + dy < ballRadius) dy = -dy;
-  else if (y + dy > HEIGHT - ballRadius) {
-    // Check paddle collision or lose life
-    if (x > paddleX && x < paddleX + paddleWidth) {
-      dy = -dy;
-    } else {
+  else if (y + dy > HEIGHT - ballRadius - paddleHeight && y + dy < HEIGHT - paddleHeight) {
+      if (x > paddleX && x < paddleX + paddleWidth) {
+        dy = -dy;
+        let deltaX = x - (paddleX + paddleWidth / 2);
+        dx = deltaX * 0.1;
+      } 
+    } else if (y + dy > HEIGHT - ballRadius) {
       lives--;
       livesEl.textContent = "Lives: " + lives;
       if (!lives) {
@@ -259,7 +385,6 @@ function draw() {
         paddleX = (WIDTH - paddleWidth) / 2;
       }
     }
-  }
 
   if (rightPressed && paddleX < WIDTH - paddleWidth) paddleX += 7;
   else if (leftPressed && paddleX > 0) paddleX -= 7;
