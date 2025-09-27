@@ -89,19 +89,25 @@ document.addEventListener("keyup", keyUpHandler);
 document.addEventListener("mousemove", mouseMoveHandler);
 
 startBtn.addEventListener("click", startGame);
-pauseBtn.addEventListener("click", pauseGame);
+pauseBtn.addEventListener("click", togglePause);
 resetBtn.addEventListener("click", resetGame);
 
 function startGame() {
   if (gameState === "paused") {
     gameState = "running";
+    pauseBtn.textContent = "Pause";
     draw();
   }
 }
 
-function pauseGame() {
+function togglePause() {
   if (gameState === "running") {
     gameState = "paused";
+    pauseBtn.textContent = "Resume";
+  } else if (gameState === "paused") {
+    gameState = "running";
+    pauseBtn.textContent = "Pause";
+    draw();
   }
 }
 
@@ -109,6 +115,7 @@ let ballSpeed = 1;
 
 function resetGame() {
   gameState = "paused";
+  pauseBtn.textContent = "Pause";
   score = 0;
   lives = 3;
   currentLevel = 0;
@@ -134,6 +141,11 @@ function resetGame() {
 function keyDownHandler(e) {
   if (e.key === "Right" || e.key === "ArrowRight") rightPressed = true;
   else if (e.key === "Left" || e.key === "ArrowLeft") leftPressed = true;
+  else if (e.key === "p" || e.key === "P") {
+    togglePause();
+  } else if (e.key === "r" || e.key === "R") {
+    resetGame();
+  }
 }
 
 function keyUpHandler(e) {
