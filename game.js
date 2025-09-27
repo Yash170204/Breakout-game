@@ -116,6 +116,8 @@ function resetGame() {
   y = HEIGHT - 30;
   dx = Math.random() < 0.5 ? 3 : -3;
   dy = -3;
+  rightPressed = false;
+  leftPressed = false;
   paddleX = (WIDTH - paddleWidth) / 2;
   loadLevel(currentLevel);
   scoreEl.textContent = "Score: " + score;
@@ -137,6 +139,9 @@ function keyUpHandler(e) {
 }
 
 function mouseMoveHandler(e) {
+  if (gameState === "paused") {
+    return;
+  }
   const relativeX = e.clientX - canvas.offsetLeft;
   if (relativeX > 0 && relativeX < WIDTH) {
     paddleX = relativeX - paddleWidth / 2;
