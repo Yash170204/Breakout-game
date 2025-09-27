@@ -20,7 +20,7 @@ const HEIGHT = canvas.height;
 
 // Paddle properties
 const paddleHeight = 10;
-const paddleWidth = 75;
+let paddleWidth = 75;
 let paddleX = (WIDTH - paddleWidth) / 2;
 let rightPressed = false;
 let leftPressed = false;
@@ -109,7 +109,12 @@ function resetGame() {
   gameState = "paused";
   score = 0;
   lives = 3;
-dx = Math.random() < 0.5 ? 3 : -3;
+  currentLevel = 0;
+  paddleWidth = 75;
+  activePowerups = {};
+  x = WIDTH / 2;
+  y = HEIGHT - 30;
+  dx = Math.random() < 0.5 ? 3 : -3;
   dy = -3;
   paddleX = (WIDTH - paddleWidth) / 2;
   loadLevel(currentLevel);
