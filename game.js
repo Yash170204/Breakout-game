@@ -105,11 +105,14 @@ function pauseGame() {
   }
 }
 
+let ballSpeed = 1;
+
 function resetGame() {
   gameState = "paused";
   score = 0;
   lives = 3;
   currentLevel = 0;
+  ballSpeed = 1;
   paddleWidth = 75;
   activePowerups = {};
   x = WIDTH / 2;
@@ -252,6 +255,7 @@ function collisionDetection() {
               alert("Next Level!");
               lives = 3;
               livesEl.textContent = "Lives: " + lives;
+              ballSpeed *= 1.2;
               x = WIDTH / 2;
               y = HEIGHT - 30;
               dx = Math.random() < 0.5 ? 3 : -3;
@@ -332,11 +336,19 @@ function drawPowerupTimers() {
 function activatePowerup(type) {
   if (type === "longPaddle") {
     paddleWidth = 150;
-    activePowerups.longPaddle = Date.now() + 10000;
-  } else if (type === "slowBall" && !activePowerups.slowBall) {
-    dx *= 0.5;
-    dy *= 0.5;
-    activePowerups.slowBall = Date.now() + 10000;
+    if (activePowerups.longPaddle) {
+      activePowerups.longPaddle += 10000;
+    } else {
+      activePowerups.longPaddle = Date.now() + 10000;
+    }
+  } else if (type === "slowBall") {
+    if (!activePowerups.slowBall) {
+      dx *= 0.5;
+      dy *= 0.5;
+      activePowerups.slowBall = Date.now() + 10000;
+    } else {
+      activePowerups.slowBall += 10000;
+    }
   } else if (type === "extraLife") {
     lives++;
     livesEl.textContent = "Lives: " + lives;
@@ -399,8 +411,8 @@ function draw() {
   if (rightPressed && paddleX < WIDTH - paddleWidth) paddleX += 7;
   else if (leftPressed && paddleX > 0) paddleX -= 7;
 
-  x += dx;
-  y += dy;
+  x += dx * ballSpeed;
+  y += dy * ballSpeed;
   requestAnimationFrame(draw);
 }
 
