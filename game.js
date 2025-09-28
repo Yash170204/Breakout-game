@@ -10,6 +10,27 @@ const livesEl = document.getElementById("lives");
 const startBtn = document.getElementById("startBtn");
 const pauseBtn = document.getElementById("pauseBtn");
 const resetBtn = document.getElementById("resetBtn");
+const lightThemeBtn = document.getElementById("light-theme-btn");
+const darkThemeBtn = document.getElementById("dark-theme-btn");
+const neonThemeBtn = document.getElementById("neon-theme-btn");
+
+
+lightThemeBtn.addEventListener("click", () => {
+  document.body.classList.remove("dark-mode", "neon-mode");
+  redrawCanvas();
+});
+
+darkThemeBtn.addEventListener("click", () => {
+  document.body.classList.remove("neon-mode");
+  document.body.classList.add("dark-mode");
+  redrawCanvas();
+});
+
+neonThemeBtn.addEventListener("click", () => {
+  document.body.classList.remove("dark-mode");
+  document.body.classList.add("neon-mode");
+  redrawCanvas();
+});
 
 let gameState = "paused";
 
@@ -134,10 +155,7 @@ function resetGame() {
   loadLevel(currentLevel);
   scoreEl.textContent = "Score: " + score;
   livesEl.textContent = "Lives: " + lives;
-  ctx.clearRect(0, 0, WIDTH, HEIGHT);
-  drawBricks();
-  drawBall();
-  drawPaddle();
+  redrawCanvas();
 }
 
 function keyDownHandler(e) {
@@ -204,7 +222,13 @@ class Particle {
 function drawBall() {
   ctx.beginPath();
   ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#FFFFFF";
+  if (document.body.classList.contains('dark-mode')) {
+    ctx.fillStyle = '#fff';
+  } else if (document.body.classList.contains('neon-mode')) {
+    ctx.fillStyle = '#0f0';
+  } else {
+    ctx.fillStyle = '#000';
+  }
   ctx.fill();
   ctx.closePath();
 }
@@ -212,7 +236,13 @@ function drawBall() {
 function drawPaddle() {
   ctx.beginPath();
   ctx.rect(paddleX, HEIGHT - paddleHeight, paddleWidth, paddleHeight);
-  ctx.fillStyle = "#FFFFFF";
+  if (document.body.classList.contains('dark-mode')) {
+    ctx.fillStyle = '#fff';
+  } else if (document.body.classList.contains('neon-mode')) {
+    ctx.fillStyle = '#0f0';
+  } else {
+    ctx.fillStyle = '#000';
+  }
   ctx.fill();
   ctx.closePath();
 }
@@ -428,12 +458,7 @@ function deactivatePowerup(type) {
   delete activePowerups[type];
 }
 
-// ===== Main Draw Loop =====
-function draw() {
-  if (gameState === "paused") {
-    return;
-  }
-
+function redrawCanvas() {
   ctx.clearRect(0, 0, WIDTH, HEIGHT);
   drawBricks();
   drawBall();
@@ -441,44 +466,51 @@ function draw() {
   drawPowerups();
   drawParticles();
   drawPowerupTimers();
-  collisionDetection();
-  powerupCollisionDetection();
-  updatePowerups();
-  updateActivePowerups();
-  updateParticles();
+}
 
-  // Bounce off side walls
-  if (x + dx > WIDTH - ballRadius || x + dx < ballRadius) dx = -dx;
+// ===== Main Draw Loop =====
+function draw() {
+  if (gameState === "running") {
+    redrawCanvas();
+    collisionDetection();
+    powerupCollisionDetection();
+    updatePowerups();
+    updateActivePowerups();
+    updateParticles();
 
-  // Bounce off top
-  if (y + dy < ballRadius) dy = -dy;
-  else if (y + dy > HEIGHT - ballRadius - paddleHeight && y + dy < HEIGHT - paddleHeight) {
-      if (x > paddleX && x < paddleX + paddleWidth) {
-        dy = -dy;
-        let deltaX = x - (paddleX + paddleWidth / 2);
-        dx = deltaX * 0.1;
-      } 
-    } else if (y + dy > HEIGHT - ballRadius) {
-      lives--;
-      livesEl.textContent = "Lives: " + lives;
-      if (!lives) {
-        alert("Game Over");
-        resetGame();
-      } else {
-        x = WIDTH / 2;
-        y = HEIGHT - 30;
-        dx = Math.random() < 0.5 ? 3 : -3;
-        dy = -3;
-        paddleX = (WIDTH - paddleWidth) / 2;
+    // Bounce off side walls
+    if (x + dx > WIDTH - ballRadius || x + dx < ballRadius) dx = -dx;
+
+    // Bounce off top
+    if (y + dy < ballRadius) dy = -dy;
+    else if (y + dy > HEIGHT - ballRadius - paddleHeight && y + dy < HEIGHT - paddleHeight) {
+        if (x > paddleX && x < paddleX + paddleWidth) {
+          dy = -dy;
+          let deltaX = x - (paddleX + paddleWidth / 2);
+          dx = deltaX * 0.1;
+        } 
+      } else if (y + dy > HEIGHT - ballRadius) {
+        lives--;
+        livesEl.textContent = "Lives: " + lives;
+        if (!lives) {
+          alert("Game Over");
+          resetGame();
+        } else {
+          x = WIDTH / 2;
+          y = HEIGHT - 30;
+          dx = Math.random() < 0.5 ? 3 : -3;
+          dy = -3;
+          paddleX = (WIDTH - paddleWidth) / 2;
+        }
       }
-    }
 
-  if (rightPressed && paddleX < WIDTH - paddleWidth) paddleX += 7;
-  else if (leftPressed && paddleX > 0) paddleX -= 7;
+    if (rightPressed && paddleX < WIDTH - paddleWidth) paddleX += 7;
+    else if (leftPressed && paddleX > 0) paddleX -= 7;
 
-  x += dx * ballSpeed;
-  y += dy * ballSpeed;
-  requestAnimationFrame(draw);
+    x += dx * ballSpeed;
+    y += dy * ballSpeed;
+    requestAnimationFrame(draw);
+  }
 }
 
 // Start the game loop
