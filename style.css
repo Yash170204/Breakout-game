@@ -10,7 +10,7 @@ button:active{transform:translateY(1px)}
 .hud{display:flex;gap:14px;align-items:center;font-size:14px;color:var(--muted)}
 .game-container{display:flex;gap:20px;}
 .game-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(2,6,23,0.6);flex-grow: 1;}
-canvas{display:block;width:100%;height:auto;background:#041127;border-radius:8px}
+canvas{display:block;width:100%;height:auto;background:#000;border-radius:8px}
 footer{margin-top:10px;color:var(--muted);font-size:13px}
 .hint{font-size:13px;color:var(--muted)}
 .hint-bar{margin-top:8px;display:flex;justify-content:space-between;align-items:center}

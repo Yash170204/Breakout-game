@@ -78,7 +78,8 @@ function loadLevel(level) {
   for (let r = 0; r < currentLevelLayout.length; r++) {
     bricks[r] = [];
     for (let c = 0; c < currentLevelLayout[r].length; c++) {
-      bricks[r][c] = { x: 0, y: 0, status: currentLevelLayout[r][c] };
+      const randomColor = `hsl(${Math.random() * 360}, 50%, 50%)`;
+      bricks[r][c] = { x: 0, y: 0, status: currentLevelLayout[r][c], color: randomColor };
     }
   }
 }
@@ -122,6 +123,7 @@ function resetGame() {
   ballSpeed = 1;
   paddleWidth = 75;
   activePowerups = {};
+  particles = [];
   x = WIDTH / 2;
   y = HEIGHT - 30;
   dx = Math.random() < 0.5 ? 3 : -3;
@@ -170,12 +172,39 @@ function mouseMoveHandler(e) {
 }
 
 let powerups = [];
+let particles = [];
+
+// ===== Particle Class =====
+class Particle {
+  constructor(x, y, color) {
+    this.x = x;
+    this.y = y;
+    this.color = color;
+    this.size = Math.random() * 5 + 2;
+    this.speedX = Math.random() * 3 - 1.5;
+    this.speedY = Math.random() * 3 - 1.5;
+    this.life = 100;
+  }
+
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.life -= 1;
+  }
+
+  draw() {
+    ctx.fillStyle = this.color;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
 
 // ===== Drawing Functions =====
 function drawBall() {
   ctx.beginPath();
   ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095DD";
+  ctx.fillStyle = "#FFFFFF";
   ctx.fill();
   ctx.closePath();
 }
@@ -183,7 +212,7 @@ function drawBall() {
 function drawPaddle() {
   ctx.beginPath();
   ctx.rect(paddleX, HEIGHT - paddleHeight, paddleWidth, paddleHeight);
-  ctx.fillStyle = "#0095DD";
+  ctx.fillStyle = "#FFFFFF";
   ctx.fill();
   ctx.closePath();
 }
@@ -198,7 +227,7 @@ function drawBricks() {
         bricks[r][c].y = brickY;
         ctx.beginPath();
         ctx.rect(brickX, brickY, brickWidth, brickHeight);
-        ctx.fillStyle = "#0095DD";
+        ctx.fillStyle = bricks[r][c].color;
         ctx.fill();
         ctx.closePath();
       }
@@ -224,6 +253,27 @@ function drawPowerups() {
   }
 }
 
+function drawParticles() {
+  for (let i = 0; i < particles.length; i++) {
+    particles[i].draw();
+  }
+}
+
+function updateParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].update();
+    if (particles[i].life <= 0) {
+      particles.splice(i, 1);
+    }
+  }
+}
+
+function createParticles(x, y, color) {
+  for (let i = 0; i < 10; i++) {
+    particles.push(new Particle(x, y, color));
+  }
+}
+
 // ===== Collision Detection =====
 function collisionDetection() {
   for (let r = 0; r < bricks.length; r++) {
@@ -240,6 +290,7 @@ function collisionDetection() {
           b.status = 0;
           score++;
           scoreEl.textContent = "Score: " + score;
+          createParticles(b.x + brickWidth / 2, b.y + brickHeight / 2, b.color);
 
           if (Math.random() < 0.2) { // 20% chance to spawn a powerup
             const powerupTypes = ["longPaddle", "slowBall", "extraLife"];
@@ -388,11 +439,13 @@ function draw() {
   drawBall();
   drawPaddle();
   drawPowerups();
+  drawParticles();
   drawPowerupTimers();
   collisionDetection();
   powerupCollisionDetection();
   updatePowerups();
   updateActivePowerups();
+  updateParticles();
 
   // Bounce off side walls
   if (x + dx > WIDTH - ballRadius || x + dx < ballRadius) dx = -dx;
